@@ -32,14 +32,11 @@ public class EventListener implements Runnable {
     try {
       // Init socket
       serverSocket = new ServerSocket(portNumber);
-      socket = serverSocket.accept();
-
-      // Init reader
-      ois = new ObjectInputStream(socket.getInputStream());
-
       // Listen
       while (socket.isBound()) {
         try {
+          socket = serverSocket.accept();
+          ois = new ObjectInputStream(socket.getInputStream());
           while (null != (eventReceived = (Event) ois.readObject())) {
             onEventReception.eventReceived(eventReceived);
             // System.out.println(eventReceived.getSenderIP());

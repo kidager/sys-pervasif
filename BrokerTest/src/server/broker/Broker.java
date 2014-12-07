@@ -6,7 +6,7 @@ import server.event.callback.OnEventReception;
 
 public class Broker {
 
-  public static void main(String[] args) {
+  public void send(String[] args) {
     // My IP : 172.16.14.159
     EventListener eventListener = new EventListener(9000);
 
