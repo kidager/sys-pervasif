@@ -3,72 +3,77 @@ package utils;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
+import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.List;
 
-/**
- * Network Utility class for the network card on a gumstix
- * 
- * @author Marcello de Sales (marcello.sales@gmail.com)
- * 
- */
-public final class NetworkUtil {
-  /**
-   * The current host IP address is the IP address from the device.
-   */
-  private static String currentHostIpAddress;
+public class NetworkUtil {
 
-  /**
-   * @return the current environment's IP address, taking into account the
-   *         Internet connection to any of the available machine's Network
-   *         interfaces. Examples of the outputs can be in octats or in IPV6
-   *         format.
-   * 
-   *         <pre>
-   *         ==> wlan0
-   *         
-   *         fec0:0:0:9:213:e8ff:fef1:b717%4 
-   *         siteLocal: true 
-   *         isLoopback: false isIPV6: true
-   *         130.212.150.216 <<<<<<<<<<<------------- This is the one we want to grab so that we can. 
-   *         siteLocal: false                          address the DSP on the network. 
-   *         isLoopback: false 
-   *         isIPV6: false 
-   *         
-   *         ==> lo 
-   *         0:0:0:0:0:0:0:1%1 
-   *         siteLocal: false 
-   *         isLoopback: true 
-   *         isIPV6: true 
-   *         127.0.0.1 
-   *         siteLocal: false 
-   *         isLoopback: true 
-   *         isIPV6: false
-   * </pre>
-   */
-  public static String getCurrentEnvironmentNetworkIp() {
-    if (currentHostIpAddress == null) {
-      Enumeration<NetworkInterface> netInterfaces = null;
-      try {
-        netInterfaces = NetworkInterface.getNetworkInterfaces();
+  public static List<NetworkInterface> getNetworkInterfacesNames() {
+    List<NetworkInterface> interfaces = new ArrayList<NetworkInterface>();
 
-        while (netInterfaces.hasMoreElements()) {
-          NetworkInterface ni = netInterfaces.nextElement();
-          Enumeration<InetAddress> address = ni.getInetAddresses();
-          while (address.hasMoreElements()) {
-            InetAddress addr = address.nextElement();
-            if (!addr.isLoopbackAddress() && addr.isSiteLocalAddress()
-                && !(addr.getHostAddress().indexOf(":") > -1)) {
-              currentHostIpAddress = addr.getHostAddress();
-            }
-          }
-        }
-        if (currentHostIpAddress == null) {
-          currentHostIpAddress = "127.0.0.1";
-        }
-      } catch (SocketException e) {
-        currentHostIpAddress = "127.0.0.1";
+    try {
+      Enumeration<NetworkInterface> list = NetworkInterface.getNetworkInterfaces();
+
+      while (list.hasMoreElements()) {
+        NetworkInterface netInterface = list.nextElement();
+        interfaces.add(netInterface);
       }
+
+    } catch (SocketException ex) {
+      ex.printStackTrace();
+    }
+
+    return interfaces;
+  }
+
+  public static InetAddress getMyIP() {
+    Enumeration<NetworkInterface> netInterfaces = null;
+    NetworkInterface ni = null;
+
+    try {
+      netInterfaces = NetworkInterface.getNetworkInterfaces();
+    } catch (SocketException ex) {}
+
+    if (netInterfaces != null && netInterfaces.hasMoreElements()) {
+      ni = netInterfaces.nextElement();
+    }
+
+    return getMyIP(ni);
+  }
+
+  public static InetAddress getMyIP(NetworkInterface _interface) {
+    if (_interface == null)
+      return null;
+
+    Enumeration<InetAddress> address = _interface.getInetAddresses();
+    while (address.hasMoreElements()) {
+      InetAddress addr = address.nextElement();
+      if (!addr.isLoopbackAddress() && addr.isSiteLocalAddress() && !(addr.getHostAddress().indexOf(":") > -1)) {
+        return addr;
+      }
+    }
+
+    return null;
+  }
+
+  public static InetAddress getCurrentEnvironmentNetworkIp() {
+    InetAddress currentHostIpAddress = null;
+    Enumeration<NetworkInterface> netInterfaces = null;
+    try {
+      netInterfaces = NetworkInterface.getNetworkInterfaces();
+
+      while (netInterfaces.hasMoreElements()) {
+        NetworkInterface ni = netInterfaces.nextElement();
+
+      }
+      if (currentHostIpAddress == null) {
+
+      }
+    } catch (Exception e) {
+      currentHostIpAddress = null;
     }
     return currentHostIpAddress;
   }
+
 }
