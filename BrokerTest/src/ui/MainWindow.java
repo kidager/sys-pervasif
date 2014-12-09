@@ -6,23 +6,22 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.net.NetworkInterface;
 import java.net.SocketException;
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.swing.JButton;
-import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
+import javax.swing.JRadioButtonMenuItem;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 import javax.swing.UIManager;
 import javax.swing.border.LineBorder;
-
-import common.config.Configuration;
 
 import server.event.Event;
 import server.event.EventListener;
@@ -30,46 +29,53 @@ import server.event.EventSender;
 import server.event.callback.OnEventReception;
 import utils.NetworkUtils;
 
-public class MainWindow implements ActionListener {
-  private static JFrame           mainFrame;
-  private static JTextField       destinationIp;
-  private static JTextField       title;
-  private static JLabel           lblTitle;
-  private static JTextField       type;
-  private static JLabel           lblType;
-  private static JLabel           lblMessage;
-  private static JLabel           lblDestionationIp;
-  private static JButton          sendBtn;
-  private static JTextArea        message;
-  private static JLabel           myIp;
-  private static JButton          exitBtn;
-  private static JTextArea        console;
-  private static JLabel           lblConsole;
-  private static String           ip = "My IP : ";
-  private static JMenuBar         menuBar;
-  private static JMenu            menuFile;
-  private static JMenuItem        menuItemExit;
-  private static JMenu            menuConfig;
-  private static JMenu            menuNetwork;
-  private static EventListener    eventListener;
+import common.config.Configuration;
 
-  private static NetworkInterface mainNetworkInterface;
+public class MainWindow implements ActionListener {
+  private static MainWindow                 window;
+  private static JFrame                     mainFrame;
+  private static JTextField                 destinationIp;
+  private static JTextField                 title;
+  private static JLabel                     lblTitle;
+  private static JTextField                 type;
+  private static JLabel                     lblType;
+  private static JLabel                     lblMessage;
+  private static JLabel                     lblDestionationIp;
+  private static JButton                    sendBtn;
+  private static JTextArea                  message;
+  private static JLabel                     myIp;
+  private static JButton                    exitBtn;
+  private static JTextArea                  console;
+  private static JLabel                     lblConsole;
+  private static String                     ip               = "My IP : ";
+  private static JMenuBar                   menuBar;
+  private static JMenu                      menuFile;
+  private static JMenuItem                  menuItemExit;
+  private static JMenu                      menuConfig;
+  private static JMenu                      menuNetwork;
+  private static List<JRadioButtonMenuItem> netInterfaceList = new ArrayList<JRadioButtonMenuItem>();
+
+  private static EventListener              eventListener;
+  private static NetworkInterface           mainNetworkInterface;
 
   public static void main(String[] args) {
     try {
-      UIManager.setLookAndFeel("com.sun.java.swing.plaf.gtk.GTKLookAndFeel");
+      UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
     } catch (Throwable e) {
       e.printStackTrace();
     }
     EventQueue.invokeLater(new Runnable() {
       public void run() {
         try {
-          // TODO: change this to match the current selected interface
-          ip = NetworkUtils.getMyIP().getHostAddress();
-          MainWindow window = new MainWindow();
+          window = new MainWindow();
+          ip = NetworkUtils.getMyIP(mainNetworkInterface).getHostAddress();
           window.setIp(ip);
-        } catch (Exception e) {
-          e.printStackTrace();
+        } catch (NullPointerException ex) {
+          JOptionPane.showMessageDialog(mainFrame, "No network interface found!",
+              "Error", JOptionPane.ERROR_MESSAGE);
+          do_exitBtn_actionPerformed(null);
+        } catch (Exception ex) {
+          ex.printStackTrace();
         }
       }
     });
@@ -126,13 +132,15 @@ public class MainWindow implements ActionListener {
             {
               List<NetworkInterface> interfaces = NetworkUtils.getNetworkInterfacesNames();
               for (NetworkInterface in : interfaces) {
-                JCheckBoxMenuItem menuItemInterface = new JCheckBoxMenuItem(in.getDisplayName());
-                menuItemInterface.setState(false);
+                JRadioButtonMenuItem menuItemInterface = new JRadioButtonMenuItem(in.getName());
+                menuItemInterface.setSelected(false);
                 if (mainNetworkInterface == null) {
                   mainNetworkInterface = in;
-                  menuItemInterface.setState(true);
+                  menuItemInterface.setSelected(true);
                 }
                 menuItemInterface.addActionListener(this);
+                System.out.println(menuItemInterface.getText());
+                netInterfaceList.add(menuItemInterface);
                 menuNetwork.add(menuItemInterface);
               }
             }
@@ -142,7 +150,7 @@ public class MainWindow implements ActionListener {
     }
 
     {
-      myIp = new JLabel("My IP : XXX.XXX.XXX.XXX");
+      myIp = new JLabel("My IP : 0.0.0.0");
       myIp.setBounds(143, 41, 276, 15);
       myIp.setHorizontalAlignment(SwingConstants.CENTER);
       mainFrame.getContentPane().add(myIp);
@@ -205,7 +213,6 @@ public class MainWindow implements ActionListener {
         {
           destinationIp = new JTextField();
           destinationIp.setBounds(155, 81, 200, 21);
-          destinationIp.setText("172.16.1.208");
           mainFrame.getContentPane().add(destinationIp);
         }
       }
@@ -237,7 +244,7 @@ public class MainWindow implements ActionListener {
 
   public void actionPerformed(ActionEvent e) {
 
-    if (e.getSource().getClass().equals(JCheckBoxMenuItem.class)) {
+    if (e.getSource().getClass().equals(JRadioButtonMenuItem.class)) {
       do_networkInterface_actionPerformed(e);
     }
 
@@ -252,13 +259,20 @@ public class MainWindow implements ActionListener {
   protected static void do_networkInterface_actionPerformed(ActionEvent e) {
     // TODO: make this really work (UI not updating in a relevant way)
     // XXX: And also you did nothing to check if itreally works or not !!! 
-    JMenuItem menu = (JMenuItem) e.getSource();
-    try {
-      mainNetworkInterface = NetworkInterface.getByName(menu.getText());
-    } catch (SocketException ex) {
-      ex.printStackTrace();
+    JRadioButtonMenuItem menuItem = (JRadioButtonMenuItem) e.getSource();
+    if (!menuItem.isSelected()) {
+      try {
+        mainNetworkInterface = NetworkInterface.getByName(menuItem.getText());
+        for (JRadioButtonMenuItem mi : netInterfaceList) {
+          mi.setSelected(false);
+        }
+        menuItem.setSelected(true);
+        JOptionPane.showMessageDialog(mainFrame, "Network changed to : "
+            + mainNetworkInterface.getDisplayName());
+      } catch (SocketException ex) {
+        ex.printStackTrace();
+      }
     }
-    JOptionPane.showMessageDialog(mainFrame, "Hello " + mainNetworkInterface.getDisplayName());
   }
 
   protected static void do_sendBtn_actionPerformed(ActionEvent e) {

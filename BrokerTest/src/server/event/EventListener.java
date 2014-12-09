@@ -41,23 +41,23 @@ public class EventListener implements Runnable {
       // Init socket
       serverSocket = new ServerSocket(portNumber);
       serverSocket.setSoTimeout(Configuration.SOCKET_WAIT_TIMEOUT);
-      // Listen
+
       while (_continue) {
         try {
+          // Listen
           socket = serverSocket.accept();
           ois = new ObjectInputStream(socket.getInputStream());
           while (null != (eventReceived = (Event) ois.readObject())) {
             onEventReception.eventReceived(eventReceived);
           }
-        } catch (EOFException | SocketTimeoutException ex) {
+        } catch (SocketTimeoutException ex) {} catch (EOFException ex) {
           ex.printStackTrace();
         }
       }
       socket.close();
-    } catch (IOException | ClassNotFoundException ex) {
+    } catch (NullPointerException ex) {} catch (IOException | ClassNotFoundException ex) {
       ex.printStackTrace();
     }
 
   }
-
 }
