@@ -5,6 +5,9 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketTimeoutException;
+
+import common.config.Configuration;
 
 import server.event.callback.OnEventReception;
 
@@ -16,6 +19,7 @@ public class EventListener implements Runnable {
   private Socket            socket;
   private ObjectInputStream ois;
   private Event             eventReceived;
+  private boolean           _continue = true;
 
   private OnEventReception  onEventReception;
 
@@ -27,22 +31,27 @@ public class EventListener implements Runnable {
     this.onEventReception = onEventReception;
   }
 
+  public void terminate() {
+    _continue = false;
+  }
+
   @Override
   public void run() {
     try {
       // Init socket
       serverSocket = new ServerSocket(portNumber);
-      socket = serverSocket.accept();
+      serverSocket.setSoTimeout(Configuration.SOCKET_WAIT_TIMEOUT);
       // Listen
-      while (socket.isBound()) {
+      while (_continue) {
         try {
           socket = serverSocket.accept();
           ois = new ObjectInputStream(socket.getInputStream());
           while (null != (eventReceived = (Event) ois.readObject())) {
             onEventReception.eventReceived(eventReceived);
-            // System.out.println(eventReceived.getSenderIP());
           }
-        } catch (EOFException ex) {}
+        } catch (EOFException | SocketTimeoutException ex) {
+          ex.printStackTrace();
+        }
       }
       socket.close();
     } catch (IOException | ClassNotFoundException ex) {

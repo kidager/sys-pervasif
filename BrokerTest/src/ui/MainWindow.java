@@ -4,38 +4,56 @@ import java.awt.Color;
 import java.awt.EventQueue;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.net.NetworkInterface;
+import java.net.SocketException;
+import java.util.List;
 
 import javax.swing.JButton;
+import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 import javax.swing.UIManager;
 import javax.swing.border.LineBorder;
 
+import common.config.Configuration;
+
 import server.event.Event;
 import server.event.EventListener;
 import server.event.EventSender;
 import server.event.callback.OnEventReception;
-import utils.NetworkUtil;
+import utils.NetworkUtils;
 
 public class MainWindow implements ActionListener {
-  private static JFrame     mainFrame;
-  private static JTextField destinationIp;
-  private static JTextField title;
-  private static JLabel     lblTitle;
-  private static JTextField type;
-  private static JLabel     lblType;
-  private static JLabel     lblMessage;
-  private static JLabel     lblDestionationIp;
-  private static JButton    sendBtn;
-  private static JTextArea  message;
-  private static JLabel     myIp;
-  private static JButton    exitBtn;
-  private static JTextArea  console;
-  private static JLabel     lblConsole;
-  private static String     ip = "My IP : ";
+  private static JFrame           mainFrame;
+  private static JTextField       destinationIp;
+  private static JTextField       title;
+  private static JLabel           lblTitle;
+  private static JTextField       type;
+  private static JLabel           lblType;
+  private static JLabel           lblMessage;
+  private static JLabel           lblDestionationIp;
+  private static JButton          sendBtn;
+  private static JTextArea        message;
+  private static JLabel           myIp;
+  private static JButton          exitBtn;
+  private static JTextArea        console;
+  private static JLabel           lblConsole;
+  private static String           ip = "My IP : ";
+  private static JMenuBar         menuBar;
+  private static JMenu            menuFile;
+  private static JMenuItem        menuItemExit;
+  private static JMenu            menuConfig;
+  private static JMenu            menuNetwork;
+  private static EventListener    eventListener;
+
+  private static NetworkInterface mainNetworkInterface;
 
   public static void main(String[] args) {
     try {
@@ -46,7 +64,8 @@ public class MainWindow implements ActionListener {
     EventQueue.invokeLater(new Runnable() {
       public void run() {
         try {
-          ip = NetworkUtil.getCurrentEnvironmentNetworkIp();
+          // TODO: change this to match the current selected interface
+          ip = NetworkUtils.getMyIP().getHostAddress();
           MainWindow window = new MainWindow();
           window.setIp(ip);
         } catch (Exception e) {
@@ -58,11 +77,13 @@ public class MainWindow implements ActionListener {
     EventQueue.invokeLater(new Runnable() {
       @Override
       public void run() {
-        EventListener eventListener = new EventListener(9000);
+        // This is just to test connection
+        // TODO: to be changed
+        eventListener = new EventListener(Configuration.CLIENT_RECEIVE_PORT);
         eventListener.setOnEventReception(new OnEventReception() {
           @Override
           public void eventReceived(Event event) {
-            console.setText(console.getText() + "\n" + event.getName() + " : " + event.getSenderIP());
+            console.setText(console.getText() + event.getName() + " : " + event.getSenderIP() + "\n");
           }
         });
         new Thread(eventListener).start();
@@ -78,55 +99,88 @@ public class MainWindow implements ActionListener {
     mainFrame = new JFrame();
     mainFrame.setTitle("Send example");
     mainFrame.setResizable(false);
-    mainFrame.setBounds(0, 0, 550, 500);
+    mainFrame.setBounds(0, 0, 550, 550);
     mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
     mainFrame.getContentPane().setLayout(null);
     mainFrame.setVisible(true);
+    {
+      menuBar = new JMenuBar();
+      menuBar.setBounds(0, 0, 550, 29);
+      mainFrame.getContentPane().add(menuBar);
+      {
+        {
+          menuFile = new JMenu("File");
+          menuBar.add(menuFile);
+          {
+            menuItemExit = new JMenuItem("Exit");
+            menuItemExit.addActionListener(this);
+            menuFile.add(menuItemExit);
+          }
+        }
+        {
+          menuConfig = new JMenu("Config");
+          menuBar.add(menuConfig);
+          {
+            menuNetwork = new JMenu("Network Interface");
+            menuConfig.add(menuNetwork);
+            {
+              List<NetworkInterface> interfaces = NetworkUtils.getNetworkInterfacesNames();
+              for (NetworkInterface in : interfaces) {
+                JCheckBoxMenuItem menuItemInterface = new JCheckBoxMenuItem(in.getDisplayName());
+                menuItemInterface.setState(false);
+                if (mainNetworkInterface == null) {
+                  mainNetworkInterface = in;
+                  menuItemInterface.setState(true);
+                }
+                menuItemInterface.addActionListener(this);
+                menuNetwork.add(menuItemInterface);
+              }
+            }
+          }
+        }
+      }
+    }
 
     {
       myIp = new JLabel("My IP : XXX.XXX.XXX.XXX");
-      myIp.setBounds(143, 10, 276, 15);
+      myIp.setBounds(143, 41, 276, 15);
       myIp.setHorizontalAlignment(SwingConstants.CENTER);
       mainFrame.getContentPane().add(myIp);
     }
     {
       {
         lblDestionationIp = new JLabel("Send to");
-        lblDestionationIp.setBounds(35, 52, 70, 15);
+        lblDestionationIp.setBounds(35, 83, 70, 15);
         mainFrame.getContentPane().add(lblDestionationIp);
       }
-      {
-        destinationIp = new JTextField();
-        destinationIp.setBounds(155, 50, 200, 21);
-        destinationIp.setText("172.16.1.208");
-        mainFrame.getContentPane().add(destinationIp);
-      }
     }
+    sendBtn = new JButton("Send");
+    sendBtn.addActionListener(this);
+    sendBtn.setBounds(410, 76, 117, 25);
+    mainFrame.getContentPane().add(sendBtn);
 
     {
       {
         lblTitle = new JLabel("Titre");
-        lblTitle.setBounds(35, 89, 70, 15);
+        lblTitle.setBounds(35, 120, 70, 15);
         mainFrame.getContentPane().add(lblTitle);
       }
-      {
-        title = new JTextField();
-        title.setColumns(10);
-        title.setBounds(155, 87, 200, 21);
-        mainFrame.getContentPane().add(title);
-      }
     }
+    exitBtn = new JButton("Exit");
+    exitBtn.addActionListener(this);
+    exitBtn.setBounds(410, 115, 117, 25);
+    mainFrame.getContentPane().add(exitBtn);
 
     {
       {
         lblType = new JLabel("Type");
-        lblType.setBounds(35, 130, 70, 15);
+        lblType.setBounds(35, 161, 70, 15);
         mainFrame.getContentPane().add(lblType);
       }
       {
         type = new JTextField();
         type.setColumns(10);
-        type.setBounds(155, 128, 200, 21);
+        type.setBounds(155, 159, 200, 21);
         mainFrame.getContentPane().add(type);
       }
     }
@@ -134,42 +188,44 @@ public class MainWindow implements ActionListener {
     {
       {
         lblMessage = new JLabel("Message");
-        lblMessage.setBounds(35, 172, 70, 15);
+        lblMessage.setBounds(35, 203, 70, 15);
         mainFrame.getContentPane().add(lblMessage);
       }
       {
         message = new JTextArea();
-        message.setBounds(155, 172, 200, 95);
+        message.setBounds(155, 203, 200, 95);
         message.setBorder(new LineBorder(Color.LIGHT_GRAY, 1, true));
         mainFrame.getContentPane().add(message);
       }
     }
-    {
-      {
-        lblConsole = new JLabel("Console");
-        lblConsole.setBounds(10, 278, 72, 17);
-        mainFrame.getContentPane().add(lblConsole);
-      }
-    }
+    {}
 
     {
       {
-        sendBtn = new JButton("Send");
-        sendBtn.addActionListener(this);
-        sendBtn.setBounds(410, 45, 117, 25);
-        mainFrame.getContentPane().add(sendBtn);
+        {
+          destinationIp = new JTextField();
+          destinationIp.setBounds(155, 81, 200, 21);
+          destinationIp.setText("172.16.1.208");
+          mainFrame.getContentPane().add(destinationIp);
+        }
       }
       {
-        exitBtn = new JButton("Exit");
-        exitBtn.addActionListener(this);
-        exitBtn.setBounds(410, 84, 117, 25);
-        mainFrame.getContentPane().add(exitBtn);
+        {
+          title = new JTextField();
+          title.setBounds(155, 118, 200, 21);
+          mainFrame.getContentPane().add(title);
+        }
       }
+    }
+    {
+      lblConsole = new JLabel("Console");
+      lblConsole.setBounds(10, 309, 72, 17);
+      mainFrame.getContentPane().add(lblConsole);
     }
     {
       console = new JTextArea();
       console.setBorder(new LineBorder(Color.LIGHT_GRAY, 1, true));
-      console.setBounds(10, 300, 525, 145);
+      console.setBounds(10, 331, 525, 164);
       console.setEditable(false);
       mainFrame.getContentPane().add(console);
     }
@@ -180,12 +236,29 @@ public class MainWindow implements ActionListener {
   }
 
   public void actionPerformed(ActionEvent e) {
+
+    if (e.getSource().getClass().equals(JCheckBoxMenuItem.class)) {
+      do_networkInterface_actionPerformed(e);
+    }
+
     if (e.getSource() == sendBtn) {
       do_sendBtn_actionPerformed(e);
     }
-    if (e.getSource() == exitBtn) {
+    if (e.getSource() == exitBtn || e.getSource() == menuItemExit) {
       do_exitBtn_actionPerformed(e);
     }
+  }
+
+  protected static void do_networkInterface_actionPerformed(ActionEvent e) {
+    // TODO: make this really work (UI not updating in a relevant way)
+    // XXX: And also you did nothing to check if itreally works or not !!! 
+    JMenuItem menu = (JMenuItem) e.getSource();
+    try {
+      mainNetworkInterface = NetworkInterface.getByName(menu.getText());
+    } catch (SocketException ex) {
+      ex.printStackTrace();
+    }
+    JOptionPane.showMessageDialog(mainFrame, "Hello " + mainNetworkInterface.getDisplayName());
   }
 
   protected static void do_sendBtn_actionPerformed(ActionEvent e) {
@@ -194,11 +267,12 @@ public class MainWindow implements ActionListener {
         type.getText(),
         message.getText(),
         ip);
-    EventSender sender = new EventSender(destinationIp.getText(), 9000, event);
+    EventSender sender = new EventSender(destinationIp.getText(), Configuration.CLIENT_RECEIVE_PORT, event);
     new Thread(sender).start();
   }
 
   protected static void do_exitBtn_actionPerformed(ActionEvent e) {
+    eventListener.terminate();
     mainFrame.dispose();
   }
 }
