@@ -19,7 +19,7 @@ import javax.swing.JTabbedPane;
 import javax.swing.SwingWorker;
 import javax.swing.UIManager;
 
-import utils.NetworkUtil;
+import utils.NetworkUtils;
 
 public class MainWindow implements ItemListener {
 
@@ -83,7 +83,7 @@ public class MainWindow implements ItemListener {
         {
           interfacesList = new JComboBox<NetworkInterface>();
           interfacesList.setBounds(123, 10, 200, 25);
-          List<NetworkInterface> list = NetworkUtil.getNetworkInterfacesNames();
+          List<NetworkInterface> list = NetworkUtils.getNetworkInterfacesNames();
           for (NetworkInterface elem : list) {
             interfacesList.addItem(elem);
           }
@@ -116,7 +116,7 @@ public class MainWindow implements ItemListener {
       @Override
       protected List<InetAddress> doInBackground() throws Exception {
         try {
-          addressesList = NetworkUtil.scanConnectedPeers(netIn);
+          addressesList = NetworkUtils.scanConnectedPeers(netIn);
         } catch (InterruptedException ex) {
           JOptionPane.showMessageDialog(frame, "Error scanning network!");
           ex.printStackTrace();

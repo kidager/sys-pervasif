@@ -9,7 +9,7 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
 
-public class NetworkUtil {
+public class NetworkUtils {
 
   public static List<NetworkInterface> getNetworkInterfacesNames() {
     List<NetworkInterface> interfaces = new ArrayList<NetworkInterface>();
