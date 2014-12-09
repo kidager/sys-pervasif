@@ -27,8 +27,8 @@ import server.event.Event;
 import server.event.EventListener;
 import server.event.EventSender;
 import server.event.callback.OnEventReception;
+import utils.FileUtils;
 import utils.NetworkUtils;
-
 import common.config.Configuration;
 
 public class MainWindow implements ActionListener {
@@ -47,16 +47,17 @@ public class MainWindow implements ActionListener {
   private static JButton                    exitBtn;
   private static JTextArea                  console;
   private static JLabel                     lblConsole;
-  private static String                     ip               = "My IP : ";
+  private static String                     ip                    = "My IP : ";
   private static JMenuBar                   menuBar;
   private static JMenu                      menuFile;
   private static JMenuItem                  menuItemExit;
   private static JMenu                      menuConfig;
   private static JMenu                      menuNetwork;
-  private static List<JRadioButtonMenuItem> netInterfaceList = new ArrayList<JRadioButtonMenuItem>();
+  private static List<JRadioButtonMenuItem> netInterfaceList      = new ArrayList<JRadioButtonMenuItem>();
 
   private static EventListener              eventListener;
   private static NetworkInterface           mainNetworkInterface;
+  private static String                     savedNetworkInterface = "";
 
   public static void main(String[] args) {
     try {
@@ -67,6 +68,7 @@ public class MainWindow implements ActionListener {
     EventQueue.invokeLater(new Runnable() {
       public void run() {
         try {
+          savedNetworkInterface = FileUtils.loadProperty("defaultNetworkAdapter");
           window = new MainWindow();
           ip = NetworkUtils.getMyIP(mainNetworkInterface).getHostAddress();
           window.setIp(ip);
@@ -267,6 +269,7 @@ public class MainWindow implements ActionListener {
           mi.setSelected(false);
         }
         menuItem.setSelected(true);
+        FileUtils.saveProperty("defaultNetworkAdapter", menuItem.getText());
         JOptionPane.showMessageDialog(mainFrame, "Network changed to : "
             + mainNetworkInterface.getDisplayName());
       } catch (SocketException ex) {
