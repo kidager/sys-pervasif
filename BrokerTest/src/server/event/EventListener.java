@@ -32,6 +32,7 @@ public class EventListener implements Runnable {
     try {
       // Init socket
       serverSocket = new ServerSocket(portNumber);
+      socket = serverSocket.accept();
       // Listen
       while (socket.isBound()) {
         try {
