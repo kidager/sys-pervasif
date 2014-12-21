@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+  android:layout_width="match_parent"
+  android:layout_height="match_parent"
+  android:orientation="vertical"
+  android:padding="16dp" >
+
+  <TextView
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:text="Nom du produit" />
+
+  <EditText
+    android:id="@+id/pName"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content" >
+
+    <requestFocus />
+  </EditText>
+
+  <TextView
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:text="Catégorie" />
+
+  <EditText
+    android:id="@+id/pCategory"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content" />
+
+  <TextView
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:text="Prix" />
+
+  <EditText
+    android:id="@+id/pPrice"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content" />
+
+  <TextView
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:text="Description" />
+
+  <EditText
+    android:id="@+id/pDesc"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content" />
+
+  <Button
+    android:id="@+id/pSubmit"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:onClick="submitProduct"
+    android:text="Envoyer l&apos;offre" />
+
+</LinearLayout>
